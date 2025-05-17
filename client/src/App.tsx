@@ -7,6 +7,8 @@ import TaskManagement from './pages/TaskManagement';
 import UserManagement from './pages/UserManagement';
 import NotFound from './pages/NotFound';
 import { AppContainer } from './styled';
+import { ToastContainer } from 'react-toastify'; // Make sure this is imported
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const location = useLocation();
@@ -25,6 +27,7 @@ function App() {
         <Route path="/users" element={<UserManagement/>} />
         <Route path="*" element={<NotFound/>} />
      </Routes>
+     <ToastContainer />
     </AppContainer>
   )
 }

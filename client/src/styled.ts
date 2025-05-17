@@ -15,3 +15,10 @@ export const HomeContainer = styled.div`
     align-items: center;
     height: 100vh;
 `
+
+export const UserImg = styled.img`
+    width: 24px;
+    height: 24px;
+    border-radius: 30px;
+    margin-right: 10px;
+`
