@@ -155,6 +155,22 @@ function TaskManagement() {
     setEditField('');
   };
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>, taskId: number) => {
+    const { value } = e.target;
+    setTasks(prevTasks =>
+      prevTasks.map(task => {
+        if (task.id === taskId) {
+          const updatedTask = { ...task, dueDate: value, updatedAt: new Date().toISOString() };
+          toast.success(`Task with ID ${task.id} updated`);
+          return updatedTask;
+        }
+        return task;
+      })
+    );
+    setEditTaskId(null);
+    setEditField('');
+  }
+
   return (
     <Fragment>
       <Table bordered hover>
@@ -201,7 +217,15 @@ function TaskManagement() {
                 }
               </td>
 
-              <td style={{ whiteSpace: 'nowrap' }}><small> {task.dueDate ? formatDate(task.dueDate) : 'N/A'}</small></td>
+              <td style={{ whiteSpace: 'nowrap' }} onClick={() => editTask(task.id, 'due-date')}>
+                {editTaskId === task.id && editField === 'due-date' ? 
+                
+                  <input type="date" onChange={(e) => handleDateChange(e, task.id)} value={task.dueDate || ''}/>
+
+                : <small> {task.dueDate ? formatDate(task.dueDate) : 'N/A'}</small>}
+                
+                </td>
+
               <td>
                 {[DropdownButton].map((DropdownType, idx) => (
                   <DropdownType
