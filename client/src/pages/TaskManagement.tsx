@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { initialMockTasks } from '../data/data';
 import Table from 'react-bootstrap/Table';
 import type { Task, User } from '../data/type';
 import Badge from 'react-bootstrap/Badge';
+import { StyledTooltip } from '../styled';
 
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import Dropdown from 'react-bootstrap/Dropdown';
@@ -10,11 +11,15 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import Stack from 'react-bootstrap/Stack';
 import { UserImg } from '../styled';
 import { toast } from 'react-toastify';
+import Overlay from 'react-bootstrap/Overlay';
+import Tooltip from 'react-bootstrap/Tooltip';
 
 function TaskManagement() {
   const [tasks, setTasks] = useState<Task[]>(initialMockTasks)
   const [users, setUsers] = useState<User[]>([])
-  const [selectedUsers, setSelectedUsers] = useState<User[]>([])
+  const [showAssignees, setShowAssignees] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const target = useRef(null);
 
   useEffect(() => {
     fetch('http://localhost:3000/api/users')
@@ -22,10 +27,10 @@ function TaskManagement() {
       .then(data => setUsers(data))
   }, [])
 
-  console.log('tasks==>');
-  console.log(tasks);
-  console.log('users==>');
-  console.log(users);
+  // console.log('tasks==>');
+  // console.log(tasks);
+  // console.log('users==>');
+  // console.log(users);
 
   const initialHeaders = tasks.length > 0 ? Object.keys(tasks[0]).filter(key => key !== 'progress' && key !== 'description' && key !== 'priority' && key !== 'storyPoints' && key !== 'createdAt') as (keyof Task)[] : [];
 
@@ -49,9 +54,24 @@ function TaskManagement() {
     return date.toLocaleDateString('en-US', options);
   }
 
-  const handleUserClick = () => {
-    alert('selected')
-  }
+  const handleAddAssignee = (task: Task, user: User) => {
+    setTasks(prevTasks =>
+      prevTasks.map(item => {
+        if (item.id === task.id) {
+          // Check if the user is already in the assignee array
+          if (!item.assignee?.some(assignee => assignee.id === user.id)) {
+            const updatedTask = { ...item, assignee: [...(item.assignee || []), user] };
+            toast.success(`${user.name} added as assignee`);
+            return updatedTask;
+          } else {
+            toast.info(`${user.name} is already assigned to this task.`);
+            return item;
+          }
+        }
+        return item;
+      })
+    );
+  };
 
   return (
     <Table bordered hover>
@@ -92,13 +112,13 @@ function TaskManagement() {
                   key={idx}
                   id={`dropdown-button-drop-${idx}`}
                   size="sm"
-                  variant="light"
-                  title={selectedUsers.length > 0 ? users[0].name : 'Assignee'}
+                  variant="info"
+                  title="Users"
                 >
                   {
                     users.map(user => (
                       <Stack direction="horizontal" gap={3} key={user.id}>
-                        <Dropdown.Item eventKey={user.id} onClick={() => handleUserClick()}>
+                        <Dropdown.Item eventKey={user.id} onClick={() => handleAddAssignee(task, user)}>
                           <UserImg src={user.imgURL ? user.imgURL : 'https://www.shutterstock.com/image-vector/grey-person-icon-business-vector-260nw-2178945117.jpg'} alt={user.name} />
                           <span>{user.name}</span>
                         </Dropdown.Item>
@@ -107,9 +127,27 @@ function TaskManagement() {
                   }
                 </DropdownType>
               ))}
+
+              {task.assignee.length === 1 && <div>{task.assignee[0].name}</div>}
+              {task.assignee.length > 1 && (
+                <div>{task.assignee[0].name} <Badge style={{ cursor: 'pointer' }} ref={target} bg='success' onMouseOver={() => setShowTooltip(true)} onMouseLeave={() => setShowTooltip(false)}>  +{task.assignee.length - 1} </Badge> </div>
+              )}
+              <Overlay target={target.current} show={showTooltip} placement="right" >
+                {(props) => (
+
+                  <StyledTooltip id="overlay-example" {...props}>
+                    {task.assignee.slice(1,).map(assignee => (
+                      <div key={assignee.id} className='d-flex align-items-center border p-1'>
+                        <div className='m-1' style={{ fontWeight: 'normal', color: 'black' }}> <UserImg src={assignee.imgURL ? assignee.imgURL : 'https://www.shutterstock.com/image-vector/grey-person-icon-business-vector-260nw-2178945117.jpg'} alt={assignee.name} /> {assignee.name}</div>
+                      </div>
+                    ))}
+                  </StyledTooltip>
+                )}
+              </Overlay>
+
             </td>
             <td>
-              {task.tags.map(tag => (<Badge bg="light" className='m-1' style={{ fontWeight: 'normal', color: 'black' }}>{tag}</Badge>))}
+              {task.tags.map((tag, index) => (<Badge key={index} bg="light" className='m-1' style={{ fontWeight: 'normal', color: 'black' }}>{tag}</Badge>))}
             </td>
             <td><small>{formatDate(task.updatedAt)}</small></td>
             <td> 📂 <a target='_blank' style={{ textDecoration: 'none' }} href={task.documentationLink}>{task.documentationLink.substring(task.documentationLink.lastIndexOf('/') + 1)}</a> </td>

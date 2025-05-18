@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { Tooltip } from 'react-bootstrap';
 
 export const AppContainer = styled.div`
     padding: 20px 80px;
@@ -22,3 +23,14 @@ export const UserImg = styled.img`
     border-radius: 30px;
     margin-right: 10px;
 `
+
+export const StyledTooltip = styled(Tooltip)`
+  &.tooltip { 
+    & > .tooltip-inner {
+      background-color: #fff;
+      color: black;
+      border: 1px solid #aaa;
+    }
+    opacity: 1 !important;
+  }
+`;
