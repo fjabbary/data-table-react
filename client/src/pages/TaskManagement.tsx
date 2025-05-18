@@ -12,7 +12,6 @@ import Stack from 'react-bootstrap/Stack';
 import { UserImg } from '../styled';
 import { toast } from 'react-toastify';
 import Overlay from 'react-bootstrap/Overlay';
-import Tooltip from 'react-bootstrap/Tooltip';
 
 function TaskManagement() {
   const [tasks, setTasks] = useState<Task[]>(initialMockTasks)
@@ -73,6 +72,19 @@ function TaskManagement() {
     );
   };
 
+  const handleDeleteAssignee = (task: Task, user: User) => {
+    setTasks(prevTasks =>
+      prevTasks.map(item => {
+        if (item.id === task.id) {
+          const updatedTask = { ...item, assignee: item.assignee?.filter(assignee => assignee.id !== user.id) };
+          toast.error(`${user.name} removed from assignee`);   
+          return updatedTask;
+        }
+        return item;
+      })
+    );
+  };
+  
   return (
     <Table bordered hover>
       <thead>
@@ -128,17 +140,18 @@ function TaskManagement() {
                 </DropdownType>
               ))}
 
-              {task.assignee.length === 1 && <div>{task.assignee[0].name}</div>}
+              {task.assignee.length === 1 && <div style={{ whiteSpace: 'nowrap' }}><small>{task.assignee[0].name}</small></div>}
               {task.assignee.length > 1 && (
-                <div>{task.assignee[0].name} <Badge style={{ cursor: 'pointer' }} ref={target} bg='success' onMouseOver={() => setShowTooltip(true)} onMouseLeave={() => setShowTooltip(false)}>  +{task.assignee.length - 1} </Badge> </div>
+                <div>{task.assignee[0].name} <Badge style={{ cursor: 'pointer' }} ref={target} bg='success' onClick={() => setShowTooltip(!showTooltip)}>  +{task.assignee.length - 1} </Badge> </div>
               )}
               <Overlay target={target.current} show={showTooltip} placement="right" >
                 {(props) => (
 
                   <StyledTooltip id="overlay-example" {...props}>
                     {task.assignee.slice(1,).map(assignee => (
-                      <div key={assignee.id} className='d-flex align-items-center border p-1'>
+                      <div key={assignee.id} className='d-flex align-items-center justify-content-between p-1 mb-2' style={{borderRight: '3px solid green', boxShadow: '0 0 5px rgba(0,0,0,0.5)'}}>
                         <div className='m-1' style={{ fontWeight: 'normal', color: 'black' }}> <UserImg src={assignee.imgURL ? assignee.imgURL : 'https://www.shutterstock.com/image-vector/grey-person-icon-business-vector-260nw-2178945117.jpg'} alt={assignee.name} /> {assignee.name}</div>
+                        <span style={{ cursor: 'pointer' }} className='p-1 text-danger' onClick={() => handleDeleteAssignee(task, assignee)}>X</span>
                       </div>
                     ))}
                   </StyledTooltip>
