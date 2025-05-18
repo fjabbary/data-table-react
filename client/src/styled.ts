@@ -30,6 +30,7 @@ export const StyledTooltip = styled(Tooltip)`
       background-color: #fff;
       color: black;
       border: 1px solid #aaa;
+      max-width: unset !important;
     }
     opacity: 1 !important;
   }

@@ -34,18 +34,18 @@ function TaskManagement() {
   const initialHeaders = tasks.length > 0 ? Object.keys(tasks[0]).filter(key => key !== 'progress' && key !== 'description' && key !== 'priority' && key !== 'storyPoints' && key !== 'createdAt') as (keyof Task)[] : [];
 
   const [headers, _] = useState(() => {
-    return initialHeaders.map(header => {
-      if (header === 'documentationLink') {
-        return 'Documentation';
-      }
-      else if (header === 'dueDate') {
-        return 'Due Date'
-      } else if (header === 'updatedAt') {
-        return 'Updated At';
-      }
-      return header;
+      return initialHeaders.map(header => {
+        if (header === 'documentationLink') {
+          return { display: 'Documentation', key: 'documentationLink' };
+        }
+        else if (header === 'dueDate') {
+          return { display: 'Due Date', key: 'dueDate' };
+        } else if (header === 'updatedAt') {
+          return { display: 'Updated At', key: 'updatedAt' };
+        }
+        return { display: header.charAt(0).toUpperCase() + header.slice(1), key: header };
+      });
     });
-  });
 
   function formatDate(dateString: string | number | Date) {
     const date = new Date(dateString);
@@ -84,13 +84,33 @@ function TaskManagement() {
       })
     );
   };
+
+  // Sorts the tasks by the selected header
+  const handleSortById = (header: keyof Task) =>  {
+    const sortedTasks = [...tasks].sort((a, b) => {
+      if (header === 'id') {
+        return a.id - b.id;
+      } else if (header === 'title') {
+        return a.title.localeCompare(b.title);
+      } else if (header === 'status') {
+        return a.status.localeCompare(b.status);
+      } else if (header === 'dueDate') {
+        return new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime();
+      } else if (header === 'updatedAt') {
+        return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+      }
+      return 0;
+    });
+    setTasks(sortedTasks);
+    toast.info(`Sorted by ${header.charAt(0).toUpperCase() + header.slice(1)}`);
+  }
   
   return (
     <Table bordered hover>
       <thead>
         <tr>
-          {headers.map((header) => (
-            <th key={header} style={{ whiteSpace: 'nowrap' }}>{header.charAt(0).toUpperCase() + header.slice(1)}</th>
+          {headers.map(({ display, key }) => (
+            <th key={key} style={{ whiteSpace: 'nowrap' }} onClick={() => handleSortById(key as keyof Task)}>{display} <small style={{fontSize: '12px'}}> ↕️</small></th>
           ))}
         </tr>
       </thead>
@@ -149,8 +169,8 @@ function TaskManagement() {
 
                   <StyledTooltip id="overlay-example" {...props}>
                     {task.assignee.slice(1,).map(assignee => (
-                      <div key={assignee.id} className='d-flex align-items-center justify-content-between p-1 mb-2' style={{borderRight: '3px solid green', boxShadow: '0 0 5px rgba(0,0,0,0.5)'}}>
-                        <div className='m-1' style={{ fontWeight: 'normal', color: 'black' }}> <UserImg src={assignee.imgURL ? assignee.imgURL : 'https://www.shutterstock.com/image-vector/grey-person-icon-business-vector-260nw-2178945117.jpg'} alt={assignee.name} /> {assignee.name}</div>
+                      <div key={assignee.id} className='d-flex align-items-center justify-content-between p-1 my-3' style={{borderRight: '3px solid green', boxShadow: '0 0 5px rgba(0,0,0,0.5)'}}>
+                        <div className='m-1 d-flex' style={{ fontWeight: 'normal', color: 'black' }}> <UserImg src={assignee.imgURL ? assignee.imgURL : 'https://www.shutterstock.com/image-vector/grey-person-icon-business-vector-260nw-2178945117.jpg'} alt={assignee.name} /> <span style={{ whiteSpace: 'nowrap' }}>{assignee.name}</span></div>
                         <span style={{ cursor: 'pointer' }} className='p-1 text-danger' onClick={() => handleDeleteAssignee(task, assignee)}>X</span>
                       </div>
                     ))}
