@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from 'react';
+import { useState, useEffect, useRef, Fragment, useCallback } from 'react';
 import { initialMockTasks } from '../data/data';
 import Table from 'react-bootstrap/Table';
 import type { Task, User } from '../data/type';
@@ -12,13 +12,11 @@ import Stack from 'react-bootstrap/Stack';
 import { UserImg } from '../styled';
 import { toast } from 'react-toastify';
 import Overlay from 'react-bootstrap/Overlay';
-// import EditModal from '../components/EditModal';
 import { Form } from 'react-bootstrap';
 
 function TaskManagement() {
-  const [tasks, setTasks] = useState<Task[]>(initialMockTasks)
+  const [tasks, setTasks] = useState<Task[]>(localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks') || '') : initialMockTasks);
   const [users, setUsers] = useState<User[]>([])
-  const [showAssignees, setShowAssignees] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [editTaskId, setEditTaskId] = useState<number | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task>({} as Task);
@@ -31,12 +29,8 @@ function TaskManagement() {
       .then(res => res.json())
       .then(data => setUsers(data))
       .catch(err => console.error('Error fetching users:', err));
-  }, [])
-
-  // console.log('tasks==>');
-  // console.log(tasks);
-  // console.log('users==>');
-  // console.log(users);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks])
 
   const initialHeaders = tasks.length > 0 ? Object.keys(tasks[0]).filter(key => key !== 'progress' && key !== 'description' && key !== 'priority' && key !== 'storyPoints' && key !== 'createdAt') as (keyof Task)[] : [];
 
@@ -112,25 +106,24 @@ function TaskManagement() {
     toast.info(`Sorted by ${header.charAt(0).toUpperCase() + header.slice(1)}`);
   }
 
-  const editTask = (taskId: number, field: String) => {
+  const editTask = useCallback((taskId: number, field: String) => {
     const taskToEdit = tasks.find(task => task.id === taskId);
     setEditTaskId(taskId);
-    setEditField(field)
-    setSelectedTask(taskToEdit || ({} as Task))
-  }
+    setEditField(field);
+    setSelectedTask(taskToEdit || ({} as Task));
+  }, [tasks, setEditTaskId, setEditField, setSelectedTask]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setSelectedTask(prevTask => ({ ...prevTask, [name]: value }));
-  };
+  }, [setSelectedTask]);
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
     const { name } = e.target;
     setTasks(prevTasks =>
       prevTasks.map(task => {
         if (task.id === editTaskId) {
           const updatedTask = name === 'title' ? { ...task, title: selectedTask.title, updatedAt: new Date().toISOString() } : { ...task, description: selectedTask.description, updatedAt: new Date().toISOString() }
-
           toast.success(`Task with ID ${task.id} updated`);
           return updatedTask;
         }
@@ -138,9 +131,9 @@ function TaskManagement() {
       })
     );
     setEditTaskId(null);
-  };
+  }, [setTasks, editTaskId, selectedTask, toast]);
 
-  const handleStatusChange = (eventKey: any, TaskId: Number) => {
+  const handleStatusChange = useCallback((eventKey: any, TaskId: Number) => {
     setTasks(prevTasks =>
       prevTasks.map(task => {
         if (task.id === TaskId) {
@@ -151,11 +144,11 @@ function TaskManagement() {
         return task;
       })
     );
-    setTimeout(() => { setEditTaskId(null)}, 300);
+    setTimeout(() => { setEditTaskId(null) }, 300);
     setEditField('');
-  };
+  }, [setTasks, toast, setEditTaskId, setEditField]);
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>, taskId: number) => {
+  const handleDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, taskId: number) => {
     const { value } = e.target;
     setTasks(prevTasks =>
       prevTasks.map(task => {
@@ -169,7 +162,7 @@ function TaskManagement() {
     );
     setEditTaskId(null);
     setEditField('');
-  }
+  }, [setTasks, toast, setEditTaskId, setEditField]);
 
   return (
     <Fragment>

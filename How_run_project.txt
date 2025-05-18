@@ -1,0 +1,9 @@
+Navigate to client and backend folders separatly
+
+run npm install to install dependecies
+
+in /client run npm run dev
+in /backend run node index.js ro run backend server
+
+
+Data is being store in localstorage - to reset it in browser, please clear local storage in chrome devtools under applcation tab
