@@ -22,6 +22,7 @@ function TaskManagement() {
   const [showTooltip, setShowTooltip] = useState(false);
   const [editTaskId, setEditTaskId] = useState<number | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task>({} as Task);
+  const [editField, setEditField] = useState<String>('')
 
   const target = useRef(null);
 
@@ -111,9 +112,10 @@ function TaskManagement() {
     toast.info(`Sorted by ${header.charAt(0).toUpperCase() + header.slice(1)}`);
   }
 
-  const editTask = (taskId: number) => {
+  const editTask = (taskId: number, field: String) => {
     const taskToEdit = tasks.find(task => task.id === taskId);
     setEditTaskId(taskId);
+    setEditField(field)
     setSelectedTask(taskToEdit || ({} as Task))
   }
 
@@ -127,7 +129,8 @@ function TaskManagement() {
     setTasks(prevTasks =>
       prevTasks.map(task => {
         if (task.id === editTaskId) {
-          const updatedTask = name === 'title' ? { ...task, title: selectedTask.title } : { ...task, description: selectedTask.description }
+          const updatedTask = name === 'title' ? { ...task, title: selectedTask.title, updatedAt: new Date().toISOString() } : { ...task, description: selectedTask.description, updatedAt: new Date().toISOString() }
+
           toast.success(`Task with ID ${task.id} updated`);
           return updatedTask;
         }
@@ -135,6 +138,21 @@ function TaskManagement() {
       })
     );
     setEditTaskId(null);
+  };
+
+  const handleStatusChange = (eventKey: any, TaskId: Number) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task => {
+        if (task.id === TaskId) {
+          const updatedTask = { ...task, status: eventKey, updatedAt: new Date().toISOString() };
+          toast.success(`Task with ID ${task.id} updated to ${eventKey}`);
+          return updatedTask;
+        }
+        return task;
+      })
+    );
+    setTimeout(() => { setEditTaskId(null)}, 300);
+    setEditField('');
   };
 
   return (
@@ -152,25 +170,37 @@ function TaskManagement() {
             <tr key={task.id}>
               <td>{task.id}</td>
               <td>
-                {editTaskId === task.id ? <Form.Control type="text" placeholder="Enter task title" value={selectedTask.title} name="title" onChange={handleChange} onBlur={handleBlur} /> : <p className='m-0' onClick={() => editTask(task.id)}>{task.title}</p>}
+                {(editTaskId === task.id && editField === 'title') ? <Form.Control type="text" placeholder="Enter task title" value={selectedTask.title} name="title" onChange={handleChange} onBlur={handleBlur} /> : <p className='m-0' onClick={() => editTask(task.id, 'title')}>{task.title}</p>}
 
-                {editTaskId === task.id ? <Form.Control type="text" placeholder="Enter task title" value={selectedTask.description} name="description" onChange={handleChange} onBlur={handleBlur} /> :  <small className='text-muted' onClick={() => editTask(task.id)}>{task.description}</small>}
+                {(editTaskId === task.id && editField === 'description') ? <Form.Control type="text" placeholder="Enter task title" value={selectedTask.description} name="description" onChange={handleChange} onBlur={handleBlur} /> : <small className='text-muted' onClick={() => editTask(task.id, 'description')}>{task.description}</small>}
               </td>
 
-              <td>
-                <Badge
-                  style={{ fontWeight: 'normal' }}
-                  bg={
-                    task.status === 'Done'
-                      ? 'success'
-                      : task.status === 'In Progress'
-                        ? 'warning'
-                        : task.status === 'Blocked'
-                          ? 'danger'
-                          : 'primary'
-                  }
-                >{task.status}</Badge>
+              <td onClick={() => editTask(task.id, 'status')}>
+                {
+                  (editTaskId === task.id && editField === 'status')
+                    ?
+                    <DropdownButton title="Status" size="sm" variant="light" onSelect={(e) => handleStatusChange(e, task.id)}>
+                      <Dropdown.Item as="button" eventKey="To Do">To Do</Dropdown.Item>
+                      <Dropdown.Item as="button" eventKey="In Progress">In Progress</Dropdown.Item>
+                      <Dropdown.Item as="button" eventKey="Done">Done</Dropdown.Item>
+                      <Dropdown.Item as="button" eventKey="Blocked">Blocked</Dropdown.Item>
+                    </DropdownButton>
+
+                    : <Badge
+                      style={{ fontWeight: 'normal' }}
+                      bg={
+                        task.status === 'Done'
+                          ? 'success'
+                          : task.status === 'In Progress'
+                            ? 'warning'
+                            : task.status === 'Blocked'
+                              ? 'danger'
+                              : 'primary'
+                      }
+                    >{task.status}</Badge>
+                }
               </td>
+
               <td style={{ whiteSpace: 'nowrap' }}><small> {task.dueDate ? formatDate(task.dueDate) : 'N/A'}</small></td>
               <td>
                 {[DropdownButton].map((DropdownType, idx) => (
