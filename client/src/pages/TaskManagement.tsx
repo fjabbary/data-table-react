@@ -12,14 +12,15 @@ import Stack from 'react-bootstrap/Stack';
 import { UserImg } from '../styled';
 import { toast } from 'react-toastify';
 import Overlay from 'react-bootstrap/Overlay';
-import EditModal from '../components/EditModal';
+// import EditModal from '../components/EditModal';
+import { Form } from 'react-bootstrap';
 
 function TaskManagement() {
   const [tasks, setTasks] = useState<Task[]>(initialMockTasks)
   const [users, setUsers] = useState<User[]>([])
   const [showAssignees, setShowAssignees] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [editTaskId, setEditTaskId] = useState<number | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task>({} as Task);
 
   const target = useRef(null);
@@ -110,11 +111,31 @@ function TaskManagement() {
     toast.info(`Sorted by ${header.charAt(0).toUpperCase() + header.slice(1)}`);
   }
 
-  const editTask = (task: Task) => {
-    console.log(task)
-    setShowModal(true);
-    setSelectedTask(task);
+  const editTask = (taskId: number) => {
+    const taskToEdit = tasks.find(task => task.id === taskId);
+    setEditTaskId(taskId);
+    setSelectedTask(taskToEdit || ({} as Task))
   }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setSelectedTask(prevTask => ({ ...prevTask, [name]: value }));
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    setTasks(prevTasks =>
+      prevTasks.map(task => {
+        if (task.id === editTaskId) {
+          const updatedTask = name === 'title' ? { ...task, title: selectedTask.title } : { ...task, description: selectedTask.description }
+          toast.success(`Task with ID ${task.id} updated`);
+          return updatedTask;
+        }
+        return task;
+      })
+    );
+    setEditTaskId(null);
+  };
 
   return (
     <Fragment>
@@ -128,12 +149,14 @@ function TaskManagement() {
         </thead>
         <tbody>
           {tasks.map(task => (
-            <tr key={task.id} onClick={() => editTask(task)}>
+            <tr key={task.id}>
               <td>{task.id}</td>
               <td>
-                <p className='m-0'>{task.title}</p>
-                <small className='text-muted'>{task.description}</small>
+                {editTaskId === task.id ? <Form.Control type="text" placeholder="Enter task title" value={selectedTask.title} name="title" onChange={handleChange} onBlur={handleBlur} /> : <p className='m-0' onClick={() => editTask(task.id)}>{task.title}</p>}
+
+                {editTaskId === task.id ? <Form.Control type="text" placeholder="Enter task title" value={selectedTask.description} name="description" onChange={handleChange} onBlur={handleBlur} /> :  <small className='text-muted' onClick={() => editTask(task.id)}>{task.description}</small>}
               </td>
+
               <td>
                 <Badge
                   style={{ fontWeight: 'normal' }}
@@ -156,7 +179,7 @@ function TaskManagement() {
                     key={idx}
                     id={`dropdown-button-drop-${idx}`}
                     size="sm"
-                    variant="info"
+                    variant="light"
                     title="Users"
                   >
                     {
@@ -201,7 +224,6 @@ function TaskManagement() {
           ))}
         </tbody>
       </Table>
-      <EditModal showModal={showModal} setShowModal={setShowModal} selectedTask={selectedTask} />
     </Fragment>
   )
 }
