@@ -27,6 +27,34 @@ app.get('/api/users', (_req, res) => {
   res.json(users);
 });
 
+app.post('/api/users', (req, res) => {
+  const newUser = req.body;
+  if (!newUser.name) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
+  
+  users.push(newUser);
+  console.log(users);
+  res.status(201).json(newUser);
+}
+);
+
+app.delete('/api/users/:id', (req, res) => {
+  const userId = req.params.id;
+  console.log(userId)
+  
+  const userIndex = users.findIndex(user => user.id == userId);
+
+  if (userIndex === -1) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  console.log(users.length)
+  users.splice(userIndex, 1);
+  console.log(users.length)
+  res.status(204).send();
+}
+);
+
 app.listen(port, host, () => {
   console.log(`[ ready ] Server running in ${nodeEnv} mode at http://${host}:${port}`);
 });
