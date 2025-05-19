@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, _] = useState(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
 
