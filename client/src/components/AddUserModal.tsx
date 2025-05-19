@@ -31,6 +31,7 @@ function AddUserModal({ showAddModal, handleClose }: { showAddModal: boolean; ha
             })
 
         handleClose();
+        window.location.reload();
     }
 
     return (
